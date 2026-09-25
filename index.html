@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMDG Direct Delivery Material Checker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0369a1 100%);
+            background-attachment: fixed;
+        }
+        /* Dynamic Ocean Wave & Ship Background */
+        .ocean-bg {
+            background-image: radial-gradient(circle at 50% 10%, rgba(56, 189, 248, 0.15), transparent 60%),
+                              url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='20' viewBox='0 0 100 20'%3E%3Cpath d='M0 10 Q25 20 50 10 T100 10' fill='none' stroke='rgba(255,255,255,0.05)' stroke-width='2'/%3E%3C/svg%3E");
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .glass-modal {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 58, 138, 0.88) 50%, rgba(3, 105, 161, 0.88) 100%),
+                              url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='20' viewBox='0 0 100 20'%3E%3Cpath d='M0 10 Q25 20 50 10 T100 10' fill='none' stroke='rgba(255,255,255,0.08)' stroke-width='2'/%3E%3C/svg%3E");
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8 relative ocean-bg">
+
+    <!-- Background Maritime Accent Icon -->
+    <div class="fixed -bottom-10 -right-10 text-white/5 pointer-events-none z-0">
+        <i class="fa-solid fa-ship text-[280px]"></i>
+    </div>
+
+    <!-- Welcome / Disclaimer Modal -->
+    <div id="disclaimerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 glass-modal transition-opacity duration-300">
+        
+        <!-- Subtle Floating Anchor Icon in Modal Background -->
+        <div class="absolute text-white/5 pointer-events-none select-none">
+            <i class="fa-solid fa-anchor text-[300px]"></i>
+        </div>
+
+        <div class="glass-card max-w-lg w-full rounded-3xl p-6 md:p-8 shadow-2xl border border-white/50 text-center space-y-6 relative z-10">
+            
+            <div class="w-16 h-16 bg-blue-100/90 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-lg shadow-blue-500/10">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <div class="space-y-2">
+                <h2 class="text-2xl font-extrabold text-slate-800 tracking-tight">Terms & Disclaimer Notice</h2>
+                <p class="text-xs text-blue-600 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-ship"></i>
+                    Maritime DG Compliance & Regulations
+                </p>
+            </div>
+
+            <div class="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-4 text-left text-xs text-slate-600 leading-relaxed space-y-2.5 font-medium max-h-48 overflow-y-auto shadow-inner">
+                <p>
+                    <strong class="text-slate-800">1. Information Accuracy:</strong> The results provided by this system are based on the latest available updates and dangerous goods compliance regulations.
+                </p>
+                <p>
+                    <strong class="text-slate-800">2. Limitation of Liability:</strong> This tool is provided for guidance and verification assistance only. The developer and system administrators assume no legal responsibility or financial liability for official actions, rejections, delays, or errors resulting from the use of this tool.
+                </p>
+                <p>
+                    <strong class="text-slate-800">3. Official Verification:</strong> Users are advised to double-check official IMDG regulations and consult directly with relevant authorities or brokers for critical shipments.
+                </p>
+            </div>
+
+            <!-- Checkbox Option -->
+            <div class="flex items-center justify-start gap-3 text-left bg-blue-50/70 p-3 rounded-xl border border-blue-200/60">
+                <input type="checkbox" id="acceptCheckbox" onchange="toggleAcceptButton()" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+                <label for="acceptCheckbox" class="text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                    I have read and agree to the terms & disclaimer notice.
+                </label>
+            </div>
+
+            <button id="acceptBtn" disabled onclick="acceptTerms()" class="w-full bg-slate-300 text-slate-500 font-bold py-3.5 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-2 cursor-not-allowed">
+                <span>Next & Accept</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="max-w-4xl w-full mx-auto mb-6 text-center z-10">
+        <div class="inline-flex items-center gap-3 bg-white/90 backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-xl border border-white/50">
+            <div class="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center text-2xl shadow-md">
+                <i class="fa-solid fa-anchor"></i>
+            </div>
+            <div class="text-left">
+                <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">Dangerous Goods Verification System in bonded zones</h1>
+                <p class="text-xs text-blue-600 font-semibold flex items-center gap-1.5">
+                    <i class="fa-solid fa-water text-cyan-500"></i>
+                    Direct Delivery & Restricted Substance Compliance
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-2xl w-full mx-auto mb-auto space-y-6 z-10">
+        
+        <!-- Checker Card -->
+        <div class="glass-card rounded-3xl p-6 md:p-8 shadow-2xl">
+            <form id="checkForm" class="space-y-5" onsubmit="event.preventDefault(); verifyDangerousGood();">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Mandatory Input 1: IMDG Class -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">
+                            IMDG Class <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="imdgClass" required placeholder="e.g. 5.1, 8, 1, 2.3" 
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-slate-800 font-semibold uppercase bg-white/80">
+                            <i class="fa-solid fa-layer-group absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-500 font-medium mt-1 block">Valid Classes: 1, 2.1, 2.2, 2.3, 3, 4.1, 4.2, 4.3, 5.1, 5.2, 6.1, 7, 8, 9</span>
+                    </div>
+
+                    <!-- Mandatory Input 2: UN Number -->
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">
+                            UN Number (UN No.) <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="unNo" required placeholder="e.g. 2031 or 1057" 
+                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-slate-800 font-semibold bg-white/80">
+                            <i class="fa-solid fa-hashtag absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        </div>
+                        <span class="text-[11px] text-slate-500 font-medium mt-1 block">Enter 4-digit UN Number</span>
+                    </div>
+                </div>
+
+                <!-- Optional Input 3: Substance Name -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-bold text-slate-700">
+                            Scientific Name
+                        </label>
+                        <span class="text-xs text-slate-500 bg-slate-200/60 px-2.5 py-0.5 rounded-full font-semibold">(Optional)</span>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="substanceName" placeholder="e.g. NITRIC ACID, AMMONIUM..." 
+                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-slate-800 font-semibold uppercase bg-white/80">
+                        <i class="fa-solid fa-vial absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/30 transition duration-200 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Verify Material Status</span>
+                </button>
+            </form>
+
+            <!-- Result Box -->
+            <div id="resultContainer" class="mt-6 hidden"></div>
+        </div>
+
+        <!-- Full Directory Accordion/Table -->
+        <div class="glass-card rounded-2xl border border-white/50 shadow-xl overflow-hidden">
+            <button onclick="toggleDirectory()" class="w-full p-4 text-left font-bold text-slate-700 flex justify-between items-center bg-white/50 hover:bg-white/80 transition">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-book-bookmark text-blue-600"></i>
+                    Direct Delivery Restricted Materials Directory (Full List)
+                </span>
+                <i id="dirChevron" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+            </button>
+            
+            <div id="directoryContent" class="hidden p-4 overflow-x-auto border-t border-slate-200/60 bg-white/90">
+                <table class="w-full text-xs text-left text-slate-600">
+                    <thead class="bg-slate-100 text-slate-700 font-bold uppercase border-b">
+                        <tr>
+                            <th class="p-2">No.</th>
+                            <th class="p-2">Substance Scientific Name</th>
+                            <th class="p-2">IMDG Class</th>
+                            <th class="p-2">UN No. Range</th>
+                        </tr>
+                    </thead>
+                    <tbody id="directoryTableBody" class="divide-y divide-slate-100">
+                        <!-- Populated via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Freight Forwarder WhatsApp Contact Section (English Only) -->
+        <div class="glass-card rounded-2xl p-4 shadow-xl border border-emerald-300/50 bg-emerald-950/20 text-white flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 text-center md:text-left">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-2xl shrink-0 shadow-lg shadow-emerald-500/30">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-extrabold text-white">Need a Freight Forwarder?</h4>
+                    <p class="text-xs text-emerald-200 font-medium">Get professional assistance for logistics, port clearance, and dangerous goods shipments.</p>
+                </div>
+            </div>
+            <!-- WhatsApp URL containing English-only message -->
+            <a href="https://wa.me/966549677574?text=Hello%2C%20I%20would%20like%20to%20inquire%20about%20Freight%20Forwarding%20and%20transshipment%20services." target="_blank" class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs py-3 px-5 rounded-xl shadow-lg shadow-emerald-500/40 transition duration-200 flex items-center justify-center gap-2 whitespace-nowrap">
+                <i class="fa-brands fa-whatsapp text-lg"></i>
+                <span>Contact via WhatsApp</span>
+            </a>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-slate-300 text-sm font-semibold z-10 space-y-1">
+        <p class="drop-shadow">Created by Ahmed Osman</p>
+    </footer>
+
+    <script>
+        // Toggle Checkbox State for Accept Button
+        function toggleAcceptButton() {
+            const checkbox = document.getElementById('acceptCheckbox');
+            const btn = document.getElementById('acceptBtn');
+
+            if (checkbox.checked) {
+                btn.disabled = false;
+                btn.className = "w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition duration-200 flex items-center justify-center gap-2 cursor-pointer group";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full bg-slate-300 text-slate-500 font-bold py-3.5 px-6 rounded-xl transition duration-200 flex items-center justify-center gap-2 cursor-not-allowed";
+            }
+        }
+
+        // Disclaimer Modal Dismissal
+        function acceptTerms() {
+            const modal = document.getElementById('disclaimerModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Official Direct Delivery Restricted Database
+        const restrictedDatabase = [
+            { id: 1, name: "EXPLOSIVES", classes: ["1"], un: ["ALL"] },
+            { id: 2, name: "RADIOACTIVE MATERIALS", classes: ["7"], un: ["ALL"] },
+            { id: 3, name: "AMMONIUM", classes: ["5.1"], un: ["1942", "2067", "2426"] },
+            { id: 4, name: "NITRIC ACID", classes: ["8"], un: ["2031"] },
+            { id: 5, name: "SULPHONIC ACID", classes: ["8"], un: ["2583", "2585", "2586"] },
+            { id: 6, name: "SULPHURIC ACID", classes: ["8"], un: ["1830", "1831", "1832"] },
+            { id: 7, name: "SODIUM HYDROXIDE", classes: ["8"], un: ["1823", "1824"] },
+            { id: 8, name: "HYDROGEN PEROXIDE", classes: ["5.1"], un: ["2014", "2015"] },
+            { id: 9, name: "GAS LIGHTER", classes: ["2.1"], un: ["1057"] },
+            { id: 10, name: "ETHYL METHYL KETONE PEROXIDE", classes: ["5.2"], un: ["1193"] },
+            { id: 11, name: "AMMONIA ANHYDROUS", classes: ["2.3", "8", "2.3/8"], un: ["1005"] },
+            { id: 12, name: "CALCIUM HYPOCHLORITE", classes: ["5.1"], un: ["2208", "3485", "3486"] },
+            { id: 13, name: "FORMIC ACID", classes: ["8"], un: ["1779", "3412"] },
+            { id: 14, name: "HYDRO CHLORIC ACID", classes: ["8"], un: ["1789"] },
+            { id: 15, name: "PHOSPHORIC ACID", classes: ["8"], un: ["1805", "3453"] },
+            { id: 16, name: "TETRA ETHYL LEAD", classes: ["6.1"], un: ["1649"] },
+            { id: 17, name: "HYDROGEN SULPHIDE", classes: ["2.3"], un: ["1053"] },
+            { id: 18, name: "ORGANIC METALLIC COMPOUNDS", classes: ["4.3", "4.2", "4.3/4.2"], un: ["3399", "3396", "3282", "1467"] }
+        ];
+
+        // Valid Approved Non-Direct Delivery / Allowed Materials List for Verification
+        const allowedDatabase = [
+            { class: "3", un: ["1202", "1203", "1223", "1263", "1993", "1866"] },
+            { class: "2.2", un: ["1002", "1013", "1066", "1072", "1977"] },
+            { class: "4.1", un: ["1325", "1350", "1944", "2000"] },
+            { class: "6.1", un: ["1593", "1888", "2810", "3287"] },
+            { class: "8", un: ["1760", "2735", "3264", "3265", "1791"] },
+            { class: "9", un: ["3077", "3082", "3480", "3481", "2211"] }
+        ];
+
+        // Valid IMDG Classes Range
+        const validClasses = ["1", "2.1", "2.2", "2.3", "3", "4.1", "4.2", "4.3", "5.1", "5.2", "6.1", "7", "8", "9", "2.3/8", "4.3/4.2"];
+
+        // Populate Table on load
+        window.onload = function() {
+            const tableBody = document.getElementById('directoryTableBody');
+            restrictedDatabase.forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="p-2 font-bold text-slate-500">${item.id}</td>
+                    <td class="p-2 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-2 font-mono text-blue-600">${item.classes.join(', ')}</td>
+                    <td class="p-2 font-mono text-slate-700">${item.un.join(', ')}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        };
+
+        function toggleDirectory() {
+            const content = document.getElementById('directoryContent');
+            const chevron = document.getElementById('dirChevron');
+            content.classList.toggle('hidden');
+            chevron.classList.toggle('rotate-180');
+        }
+
+        function verifyDangerousGood() {
+            const imdgInput = document.getElementById('imdgClass').value.trim().toUpperCase();
+            const unInput = document.getElementById('unNo').value.trim().toUpperCase();
+            const nameInput = document.getElementById('substanceName').value.trim().toUpperCase();
+
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.classList.remove('hidden');
+
+            // Strict Validation Check 1: 4 Digits UN Number Format Check
+            const isFourDigits = /^\d{4}$/.test(unInput);
+            const isValidClass = validClasses.includes(imdgInput);
+
+            if (!isValidClass || !isFourDigits) {
+                showInvalidFormatMessage("Invalid Input Data", "Please enter a valid IMDG Class and a proper 4-digit UN Number.");
+                return;
+            }
+
+            // Check match with Restricted Direct Delivery Database
+            let directDeliveryMatch = null;
+            for (let item of restrictedDatabase) {
+                const classMatch = item.classes.includes(imdgInput) || item.classes.some(c => imdgInput.startsWith(c));
+                const unMatch = item.un.includes("ALL") || item.un.includes(unInput);
+                const nameMatch = !nameInput || item.name.includes(nameInput) || nameInput.includes(item.name);
+
+                if (classMatch && unMatch && nameMatch) {
+                    directDeliveryMatch = item;
+                    break;
+                }
+            }
+
+            // Check match with Approved / Allowed Database
+            let allowedMatch = false;
+            for (let item of allowedDatabase) {
+                if (item.class === imdgInput && item.un.includes(unInput)) {
+                    allowedMatch = true;
+                    break;
+                }
+            }
+
+            // Render Output Logic
+            if (directDeliveryMatch) {
+                // RED RESULT - RESTRICTED DIRECT DELIVERY
+                resultContainer.innerHTML = `
+                    <div class="bg-red-50/95 border-2 border-red-500 rounded-2xl p-5 text-red-900 shadow-md space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-ban"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-extrabold text-red-700">RESTRICTED: DIRECT DELIVERY REQUIRED</h3>
+                                <p class="text-xs text-red-600 font-medium">This substance is restricted and can not loaded with LCL container. It must be loaded in FCL and declaration must be done before vessel arrives.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white/80 rounded-xl p-3 border border-red-200 text-sm space-y-1.5 font-medium">
+                            <div class="flex justify-between"><span class="text-slate-500">Official Scientific Name:</span> <span class="font-bold text-slate-800">${directDeliveryMatch.name}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">IMDG Class:</span> <span class="font-bold text-slate-800">${directDeliveryMatch.classes.join(', ')}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Matched UN No.:</span> <span class="font-bold text-slate-800">${unInput}</span></div>
+                        </div>
+                    </div>
+                `;
+            } else if (allowedMatch) {
+                // GREEN RESULT - ALLOWED
+                resultContainer.innerHTML = `
+                    <div class="bg-emerald-50/95 border-2 border-emerald-500 rounded-2xl p-5 text-emerald-900 shadow-md space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xl shrink-0">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-extrabold text-emerald-700">ALLOWED: STANDARD HANDLING</h3>
+                                <p class="text-xs text-emerald-600 font-medium">Verified material - Not listed under mandatory Direct Delivery rules.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/80 rounded-xl p-3 border border-emerald-200 text-sm space-y-1 font-medium">
+                            <div class="flex justify-between"><span class="text-slate-500">Entered Class:</span> <span class="font-bold text-slate-800">${imdgInput}</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">Entered UN No.:</span> <span class="font-bold text-slate-800">${unInput}</span></div>
+                            ${nameInput ? `<div class="flex justify-between"><span class="text-slate-500">Entered Name:</span> <span class="font-bold text-slate-800">${nameInput}</span></div>` : ''}
+                        </div>
+
+                        <div class="bg-emerald-100/80 border border-emerald-300 rounded-xl p-3 text-xs font-bold text-emerald-800 flex items-start gap-2">
+                            <i class="fa-solid fa-circle-info mt-0.5 text-emerald-600"></i>
+                            <span>Allowed loading it in console container (LCL), FCL, and regular storage.</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // AMBER RESULT - UNRECOGNIZED / UNVERIFIED / FAKE DATA
+                showInvalidFormatMessage(
+                    "Unverified Entry / Data Not Found", 
+                    "The combination of IMDG Class (" + imdgInput + ") and UN No. (" + unInput + ") is unrecognized or incorrect. Please check your shipping documents."
+                );
+            }
+        }
+
+        function showInvalidFormatMessage(title, detail) {
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.innerHTML = `
+                <div class="bg-amber-50/95 border-2 border-amber-500 rounded-2xl p-5 text-amber-900 shadow-md">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-amber-800">${title}</h3>
+                            <p class="text-xs text-amber-700 font-medium">${detail}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
